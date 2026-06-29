@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>安心存储 SDS - 安全·灵活·自助仓储</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz@14..32&display=swap" rel="stylesheet">
+    <!-- 自定义微调 -->
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        .bg-primary { background-color: #1A365D; }
+        .bg-primary-light { background-color: #2A4A7F; }
+        .text-primary { color: #1A365D; }
+        .border-primary { border-color: #1A365D; }
+        .bg-accent { background-color: #ED8936; }
+        .bg-accent-hover:hover { background-color: #D97A2A; }
+        .text-accent { color: #ED8936; }
+        .border-accent { border-color: #ED8936; }
+        .bg-gray-custom { background-color: #F7FAFC; }
+        .page-section {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        .page-section.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* 小程序弹窗遮罩 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-overlay.active {
+            display: flex;
+        }
+        .modal-card {
+            background: white;
+            max-width: 400px;
+            width: 90%;
+            padding: 2rem;
+            border-radius: 1.5rem;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+        }
+        /* 库存标签 */
+        .stock-tag {
+            background: #E2E8F0;
+            color: #2D3748;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="bg-gray-custom text-gray-800 antialiased">
+
+    <!-- ==================== 导航栏 ==================== -->
+    <nav class="bg-primary text-white sticky top-0 z-50 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-2 cursor-pointer" onclick="showPage('home')">
+                    <span class="text-2xl font-bold tracking-tight">SDS</span>
+                    <span class="hidden sm:inline text-sm font-light text-gray-300">安心存储</span>
+                </div>
+
+                <!-- 桌面端导航 -->
+                <div class="hidden md:flex items-center space-x-8 text-sm font-medium">
+                    <a href="#" onclick="showPage('home'); return false;" class="hover:text-accent transition">首页</a>
+                    <a href="#" onclick="showPage('units'); return false;" class="hover:text-accent transition">存储单元</a>
+                    <a href="#" onclick="showPage('pricing'); return false;" class="hover:text-accent transition">价格与优惠</a>
+                    <a href="#" onclick="showPage('process'); return false;" class="hover:text-accent transition">如何存储</a>
+                    <a href="#" onclick="showPage('about'); return false;" class="hover:text-accent transition">关于我们</a>
+                </div>
+
+                <!-- 预约按钮（全局） -->
+                <div>
+                    <button onclick="openModal()" class="bg-accent hover:bg-accent-hover text-white font-semibold py-2 px-5 rounded-full text-sm transition shadow-md hover:shadow-lg flex items-center space-x-1">
+                        <span>📱</span>
+                        <span>微信小程序预约</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- 移动端底部导航（固定在底部） -->
+        <div class="md:hidden fixed bottom-0 left-0 right-0 bg-primary border-t border-gray-700 flex justify-around items-center py-2 z-50">
+            <a href="#" onclick="showPage('home'); return false;" class="flex flex-col items-center text-xs text-gray-300 hover:text-accent"><span>🏠</span>首页</a>
+            <a href="#" onclick="showPage('units'); return false;" class="flex flex-col items-center text-xs text-gray-300 hover:text-accent"><span>📦</span>单元</a>
+            <a href="#" onclick="showPage('pricing'); return false;" class="flex flex-col items-center text-xs text-gray-300 hover:text-accent"><span>🏷️</span>优惠</a>
+            <a href="#" onclick="showPage('process'); return false;" class="flex flex-col items-center text-xs text-gray-300 hover:text-accent"><span>📋</span>流程</a>
+            <a href="#" onclick="showPage('about'); return false;" class="flex flex-col items-center text-xs text-gray-300 hover:text-accent"><span>📍</span>关于</a>
+        </div>
+        <!-- 移动端底部占位（避免内容被遮挡） -->
+        <div class="h-16 md:h-0"></div>
+    </nav>
+
+    <!-- ==================== 主内容区 ==================== -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mb-16 md:mb-0">
+
+        <!-- ===== 首页 ===== -->
+        <section id="home" class="page-section active">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h1 class="text-4xl sm:text-5xl font-extrabold text-primary leading-tight">
+                        安心存储，<br class="sm:hidden"/>让搬家更轻松
+                    </h1>
+                    <p class="text-lg text-gray-600 mt-4 leading-relaxed">
+                        为城市移动人群提供灵活、安全、便捷的自助仓储服务。
+                        所有单元净高 <span class="font-bold text-primary">2.8 米</span>，多种尺寸可选，微信小程序一键预约。
+                    </p>
+                    <div class="mt-8 flex flex-wrap gap-4">
+                        <button onclick="showPage('units')" class="bg-primary text-white font-semibold py-3 px-8 rounded-full shadow-md hover:bg-primary-light transition">查看存储单元</button>
+                        <button onclick="openModal()" class="bg-accent text-white font-semibold py-3 px-8 rounded-full shadow-md hover:bg-accent-hover transition flex items-center gap-2">
+                            📱 立即预约
+                        </button>
+                    </div>
+                    <!-- 信任标识 -->
+                    <div class="mt-10 grid grid-cols-3 gap-2 text-center text-sm text-gray-500">
+                        <div><span class="block text-2xl">🔒</span>实名验证</div>
+                        <div><span class="block text-2xl">👤</span>人脸识别</div>
+                        <div><span class="block text-2xl">🕒</span>6:00-21:00</div>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-xl border border-gray-100">
+                    <h3 class="text-xl font-bold text-primary mb-4">🎉 限时优惠</h3>
+                    <div class="space-y-4">
+                        <div class="bg-orange-50 border-l-4 border-accent p-4 rounded-r-lg">
+                            <p class="font-bold text-accent">🎓 大学生首月半价</p>
+                            <p class="text-sm text-gray-600">凭学生证验证，首月仅需 5折 起</p>
+                        </div>
+                        <div class="bg-blue-50 border-l-4 border-primary p-4 rounded-r-lg">
+                            <p class="font-bold text-primary">🆕 新用户首月75折</p>
+                            <p class="text-sm text-gray-600">首次使用用户专享，首月 75折 优惠</p>
+                        </div>
+                        <p class="text-xs text-gray-400 text-right">* 两项优惠不可叠加使用</p>
+                    </div>
+                    <div class="mt-6 p-4 bg-gray-50 rounded-lg text-center">
+                        <p class="text-sm text-gray-500">预约后 <span class="font-bold text-primary">3日内</span> 确认订单</p>
+                    </div>
+                </div>
+            </div>
+            <!-- 合作/特色 -->
+            <div class="mt-16 bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
+                <h2 class="text-2xl font-bold text-primary text-center mb-6">为什么选择安心存储</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+                    <div><span class="text-4xl block">🏢</span><span class="font-medium">独立空间</span><p class="text-xs text-gray-400">专属锁具，隐私保护</p></div>
+                    <div><span class="text-4xl block">📹</span><span class="font-medium">24h监控</span><p class="text-xs text-gray-400">全方位安全防护</p></div>
+                    <div><span class="text-4xl block">🧊</span><span class="font-medium">恒温恒湿</span><p class="text-xs text-gray-400">物品存放更安心</p></div>
+                    <div><span class="text-4xl block">📦</span><span class="font-medium">灵活租期</span><p class="text-xs text-gray-400">按需存储，随存随取</p></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== 存储单元 ===== -->
+        <section id="units" class="page-section">
+            <h2 class="text-3xl font-extrabold text-primary mb-2">选择您的存储单元</h2>
+            <p class="text-gray-500 mb-8">所有单元净高 <span class="font-bold text-primary">2.8 米</span>，以下为当前可用尺寸与库存，点击“预约”即可在微信小程序中下单。</p>
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+                <!-- 卡片 1 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition border border-gray-100 flex flex-col">
+                    <div class="p-5 flex-1">
+                        <div class="bg-blue-50 w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-3">📦</div>
+                        <h3 class="font-bold text-lg">60 × 60 cm <span class="text-sm font-normal text-gray-500">(高 2.8m)</span></h3>
+                        <p class="text-2xl font-bold text-primary mt-2">¥50 <span class="text-sm font-normal text-gray-400">/月</span></p>
+                        <div class="mt-2 flex items-center gap-2">
+                            <span class="stock-tag">库存 <span class="font-bold">24</span> 个</span>
+                            <span class="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">有货</span>
+                        </div>
+                        <p class="text-sm text-gray-400 mt-3">适合行李箱、小件杂物</p>
+                    </div>
+                    <button onclick="openModal()" class="bg-primary hover:bg-primary-light text-white font-medium py-3 transition text-center w-full">📱 预约</button>
+                </div>
+                <!-- 卡片 2 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition border border-gray-100 flex flex-col">
+                    <div class="p-5 flex-1">
+                        <div class="bg-blue-50 w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-3">📦</div>
+                        <h3 class="font-bold text-lg">100 × 100 cm <span class="text-sm font-normal text-gray-500">(高 2.8m)</span></h3>
+                        <p class="text-2xl font-bold text-primary mt-2">¥80 <span class="text-sm font-normal text-gray-400">/月</span></p>
+                        <div class="mt-2 flex items-center gap-2">
+                            <span class="stock-tag">库存 <span class="font-bold">20</span> 个</span>
+                            <span class="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">有货</span>
+                        </div>
+                        <p class="text-sm text-gray-400 mt-3">适合家具、家电、大件箱包</p>
+                    </div>
+                    <button onclick="openModal()" class="bg-primary hover:bg-primary-light text-white font-medium py-3 transition text-center w-full">📱 预约</button>
+                </div>
+                <!-- 卡片 3 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition border border-gray-100 flex flex-col">
+                    <div class="p-5 flex-1">
+                        <div class="bg-blue-50 w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-3">📦</div>
+                        <h3 class="font-bold text-lg">100 × 210 cm <span class="text-sm font-normal text-gray-500">(高 2.8m)</span></h3>
+                        <p class="text-2xl font-bold text-primary mt-2">¥150 <span class="text-sm font-normal text-gray-400">/月</span></p>
+                        <div class="mt-2 flex items-center gap-2">
+                            <span class="stock-tag">库存 <span class="font-bold">10</span> 个</span>
+                            <span class="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">有货</span>
+                        </div>
+                        <p class="text-sm text-gray-400 mt-3">适合立式衣柜、大型家电</p>
+                    </div>
+                    <button onclick="openModal()" class="bg-primary hover:bg-primary-light text-white font-medium py-3 transition text-center w-full">📱 预约</button>
+                </div>
+                <!-- 卡片 4 -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition border border-gray-100 flex flex-col">
+                    <div class="p-5 flex-1">
+                        <div class="bg-blue-50 w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-3">📦</div>
+                        <h3 class="font-bold text-lg">150 × 210 cm <span class="text-sm font-normal text-gray-500">(高 2.8m)</span></h3>
+                        <p class="text-2xl font-bold text-primary mt-2">¥200 <span class="text-sm font-normal text-gray-400">/月</span></p>
+                        <div class="mt-2 flex items-center gap-2">
+                            <span class="stock-tag">库存 <span class="font-bold">10</span> 个</span>
+                            <span class="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">有货</span>
+                        </div>
+                        <p class="text-sm text-gray-400 mt-3">适合整套家具、大件货物</p>
+                    </div>
+                    <button onclick="openModal()" class="bg-primary hover:bg-primary-light text-white font-medium py-3 transition text-center w-full">📱 预约</button>
+                </div>
+                <!-- 卡片 5 (库存已修正为5个) -->
+                <div class="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition border border-gray-100 flex flex-col">
+                    <div class="p-5 flex-1">
+                        <div class="bg-blue-50 w-12 h-12 rounded-full flex items-center justify-center text-2xl mb-3">📦</div>
+                        <h3 class="font-bold text-lg">200 × 210 cm <span class="text-sm font-normal text-gray-500">(高 2.8m)</span></h3>
+                        <p class="text-2xl font-bold text-primary mt-2">¥240 <span class="text-sm font-normal text-gray-400">/月</span></p>
+                        <div class="mt-2 flex items-center gap-2">
+                            <span class="stock-tag">库存 <span class="font-bold">5</span> 个</span>
+                            <span class="text-xs text-green-600 bg-green-50 px-2 py-0.5 rounded-full">有货</span>
+                        </div>
+                        <p class="text-sm text-gray-400 mt-3">适合大型家具、商业存储</p>
+                    </div>
+                    <button onclick="openModal()" class="bg-primary hover:bg-primary-light text-white font-medium py-3 transition text-center w-full">📱 预约</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== 价格与优惠 ===== -->
+        <section id="pricing" class="page-section">
+            <h2 class="text-3xl font-extrabold text-primary mb-2">价格与优惠</h2>
+            <p class="text-gray-500 mb-8">所有单元净高 <span class="font-bold text-primary">2.8 米</span>，月租灵活，无长期合约。</p>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- 价格表 -->
+                <div class="lg:col-span-2 bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-primary text-white text-xs uppercase">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 rounded-tl-lg">尺寸 (宽×深)</th>
+                                    <th scope="col" class="px-6 py-3">高度</th>
+                                    <th scope="col" class="px-6 py-3">月租</th>
+                                    <th scope="col" class="px-6 py-3">库存</th>
+                                    <th scope="col" class="px-6 py-3 rounded-tr-lg">适用场景</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <tr class="hover:bg-gray-50"><td class="px-6 py-4 font-medium">60×60 cm</td><td class="px-6 py-4">2.8 m</td><td class="px-6 py-4">¥50</td><td class="px-6 py-4">24</td><td class="px-6 py-4 text-gray-500">小件杂物</td></tr>
+                                <tr class="hover:bg-gray-50"><td class="px-6 py-4 font-medium">100×100 cm</td><td class="px-6 py-4">2.8 m</td><td class="px-6 py-4">¥80</td><td class="px-6 py-4">20</td><td class="px-6 py-4 text-gray-500">家电箱包</td></tr>
+                                <tr class="hover:bg-gray-50"><td class="px-6 py-4 font-medium">100×210 cm</td><td class="px-6 py-4">2.8 m</td><td class="px-6 py-4">¥150</td><td class="px-6 py-4">10</td><td class="px-6 py-4 text-gray-500">立式衣柜</td></tr>
+                                <tr class="hover:bg-gray-50"><td class="px-6 py-4 font-medium">150×210 cm</td><td class="px-6 py-4">2.8 m</td><td class="px-6 py-4">¥200</td><td class="px-6 py-4">10</td><td class="px-6 py-4 text-gray-500">整套家具</td></tr>
+                                <!-- 200×210 库存改为 5 -->
+                                <tr class="hover:bg-gray-50"><td class="px-6 py-4 font-medium">200×210 cm</td><td class="px-6 py-4">2.8 m</td><td class="px-6 py-4">¥240</td><td class="px-6 py-4">5</td><td class="px-6 py-4 text-gray-500">商业/大件</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-4">* 预约后3日内确认订单</p>
+                </div>
+
+                <!-- 优惠卡片 -->
+                <div class="space-y-6">
+                    <div class="bg-gradient-to-br from-orange-400 to-orange-500 text-white rounded-2xl p-6 shadow-lg">
+                        <h3 class="text-2xl font-bold">🎓 大学生</h3>
+                        <p class="text-4xl font-extrabold my-2">首月半价</p>
+                        <p class="opacity-90">凭学生证验证，首月仅需 50% 费用</p>
+                        <div class="mt-4 text-sm bg-white/20 p-2 rounded-lg text-center">需出示有效学生证明</div>
+                    </div>
+                    <div class="bg-gradient-to-br from-primary to-primary-light text-white rounded-2xl p-6 shadow-lg">
+                        <h3 class="text-2xl font-bold">🆕 新用户</h3>
+                        <p class="text-4xl font-extrabold my-2">首月75折</p>
+                        <p class="opacity-90">首次使用用户专享 25% 折扣</p>
+                        <div class="mt-4 text-sm bg-white/20 p-2 rounded-lg text-center">自动识别，无需额外操作</div>
+                    </div>
+                    <div class="bg-white border-2 border-dashed border-gray-300 rounded-2xl p-4 text-center text-sm text-gray-500">
+                        ⚠️ 两项优惠不可叠加，系统将自动选择最优方案
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ===== 如何存储 ===== -->
+        <section id="process" class="page-section">
+            <h2 class="text-3xl font-extrabold text-primary mb-2">存储流程</h2>
+            <p class="text-gray-500 mb-8">只需 6 步，即可轻松入驻。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-start">
+                    <span class="bg-accent text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm mb-3">1</span>
+                    <h3 class="font-bold text-lg">选择单元</h3>
+                    <p class="text-gray-500 text-sm">根据物品大小选择合适的存储空间（高2.8米）</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-start">
+                    <span class="bg-accent text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm mb-3">2</span>
+                    <h3 class="font-bold text-lg">微信小程序预约</h3>
+                    <p class="text-gray-500 text-sm">点击“预约”按钮，扫码进入小程序下单</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-start">
+                    <span class="bg-accent text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm mb-3">3</span>
+                    <h3 class="font-bold text-lg">3日内确认</h3>
+                    <p class="text-gray-500 text-sm">后台将在 3 个工作日内确认您的订单</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-start">
+                    <span class="bg-accent text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm mb-3">4</span>
+                    <h3 class="font-bold text-lg">实名验证</h3>
+                    <p class="text-gray-500 text-sm">到店出示身份证进行实名登记</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-start">
+                    <span class="bg-accent text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm mb-3">5</span>
+                    <h3 class="font-bold text-lg">人脸录入</h3>
+                    <p class="text-gray-500 text-sm">前台录入人脸信息，用于进出识别</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col items-start">
+                    <span class="bg-accent text-white w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm mb-3">6</span>
+                    <h3 class="font-bold text-lg">入库存储</h3>
+                    <p class="text-gray-500 text-sm">自由出入（6:00-21:00），安心存放物品</p>
+                </div>
+            </div>
+            <div class="mt-8 bg-primary/5 p-6 rounded-2xl border border-primary/10 text-center">
+                <p class="text-primary font-medium">🕒 营业时间：每日 06:00 — 21:00（含节假日）</p>
+            </div>
+        </section>
+
+        <!-- ===== 关于我们 ===== -->
+        <section id="about" class="page-section">
+            <h2 class="text-3xl font-extrabold text-primary mb-2">关于安心存储</h2>
+            <p class="text-gray-500 mb-8">安全、灵活、便捷的城市仓储专家。</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100">
+                    <h3 class="text-xl font-bold text-primary mb-4">🏢 我们的服务</h3>
+                    <p class="text-gray-600 leading-relaxed">
+                        安心存储（SDS）致力于为城市中频繁搬家、装修过渡、或需要临时空间存放物品的个人与家庭，提供高品质的自助仓储服务。
+                        所有仓库单元净高 <span class="font-bold text-primary">2.8 米</span>，配备 24 小时监控、恒温恒湿系统，并采用人脸识别门禁，确保您的物品安全无忧。
+                    </p>
+                    <div class="mt-6 p-4 bg-gray-50 rounded-xl">
+                        <p class="font-semibold">📍 仓库地址</p>
+                        <p class="text-gray-600">乌鲁木齐市（具体地址待补充）</p>
+                        <p class="font-semibold mt-2">🕒 营业时间</p>
+                        <p class="text-gray-600">每日 06:00 — 21:00</p>
+                    </div>
+                </div>
+                <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100 flex flex-col items-center justify-center">
+                    <h3 class="text-xl font-bold text-primary mb-4">📱 微信小程序</h3>
+                    <div class="w-48 h-48 bg-gray-200 rounded-2xl flex items-center justify-center border-2 border-dashed border-gray-400">
+                        <div class="text-center text-gray-500">
+                            <span class="text-5xl block mb-2">📲</span>
+                            <span class="text-sm">小程序码占位</span>
+                            <span class="text-xs block">扫码即可预约</span>
+                        </div>
+                    </div>
+                    <p class="mt-4 text-sm text-gray-400">所有预约、支付、订单管理均在微信小程序完成</p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ==================== 页脚 ==================== -->
+    <footer class="bg-primary text-gray-300 py-8 mt-8 border-t border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-sm">
+            <p class="font-bold text-white">© 2026 安心存储 SAFE DEPOSIT STORAGE (SDS)</p>
+            <p class="mt-1">为城市移动人群提供灵活存储空间 | 营业时间 06:00-21:00</p>
+            <p class="mt-2 text-gray-500 text-xs">本网站仅用于展示，预约请通过微信小程序</p>
+        </div>
+    </footer>
+
+    <!-- ==================== 模态框（小程序预约弹窗） ==================== -->
+    <div id="modal" class="modal-overlay" onclick="if(event.target===this) closeModal()">
+        <div class="modal-card">
+            <button onclick="closeModal()" class="float-right text-gray-400 hover:text-gray-600 text-2xl leading-none">&times;</button>
+            <div class="mt-4">
+                <span class="text-5xl block mb-4">📱</span>
+                <h3 class="text-2xl font-bold text-primary">微信小程序预约</h3>
+                <p class="text-gray-500 text-sm mt-2">请使用微信扫描下方二维码，进入 SDS 预约小程序</p>
+                <div class="w-40 h-40 bg-gray-100 border-2 border-dashed border-gray-300 rounded-2xl mx-auto mt-4 flex items-center justify-center">
+                    <div class="text-center text-gray-400">
+                        <span class="text-4xl block">◻︎</span>
+                        <span class="text-xs">二维码占位</span>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-400 mt-4">预约后 3 日内确认，请保持手机畅通</p>
+                <button onclick="closeModal()" class="mt-6 bg-primary text-white py-2 px-6 rounded-full text-sm hover:bg-primary-light transition">我知道了</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== JavaScript ==================== -->
+    <script>
+        // 页面切换
+        function showPage(pageId) {
+            // 隐藏所有页面
+            document.querySelectorAll('.page-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            // 显示目标页面
+            const target = document.getElementById(pageId);
+            if (target) {
+                target.classList.add('active');
+            }
+            // 滚动到顶部
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 模态框控制
+        function openModal() {
+            document.getElementById('modal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        // 点击模态框外部关闭（已通过 onclick 实现）
+        // 额外：按 ESC 键关闭
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+    </script>
+
+</body>
+</html>
